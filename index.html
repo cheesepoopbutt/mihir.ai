@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mihir.ai</title>
+    
+    <link rel="icon" type="image/jpeg" href="cattongue.jpg">
+
+    <style>
+        :root {
+            --primary-color: #262626; 
+            --bg-color: #000000;      
+            --chat-bg: #0a0a0a;       
+            --text-main: #f5f5f5;
+            --text-muted: #a3a3a3;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            color: var(--text-main);
+            padding: 20px; 
+        }
+
+        /* Expanded layout to fill most of the screen */
+        .chat-container {
+            width: 95%;
+            max-width: 1400px; 
+            height: 92vh;       
+            background: var(--chat-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #262626;
+        }
+
+        /* Chat Header */
+        .chat-header {
+            background: #000000;
+            color: var(--text-main);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #262626;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar {
+            width: 45px;
+            height: 45px;
+            background: #171717;
+            border-radius: 8px;
+            overflow: hidden; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; 
+        }
+
+        .bot-info h2 {
+            font-size: 1.1rem;
+            margin-bottom: 2px;
+            letter-spacing: -0.5px;
+        }
+
+        .bot-info p {
+            font-size: 0.8rem;
+            color: #ef4444;
+        }
+
+        /* Chat Window / Messages Area */
+        .chat-window {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: #050505;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .bot-message {
+            background: #171717;
+            color: #f5f5f5;
+            align-self: flex-start;
+            border-left: 4px solid #dc2626;
+        }
+
+        .user-message {
+            background: #404040;
+            color: white;
+            align-self: flex-end;
+        }
+
+        /* Chat Input Area */
+        .chat-input-area {
+            padding: 20px;
+            background: #000000;
+            border-top: 1px solid #262626;
+            display: flex;
+            gap: 15px;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 15px;
+            background: #0a0a0a;
+            border: 1px solid #262626;
+            border-radius: 6px;
+            outline: none;
+            font-size: 1rem;
+            color: white;
+        }
+
+        .chat-input-area input:focus {
+            border-color: #dc2626;
+        }
+
+        .chat-input-area button {
+            background: #171717;
+            color: #a3a3a3;
+            border: 1px solid #262626;
+            padding: 0 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .chat-input-area button:hover {
+            background: #dc2626;
+            color: white;
+            border-color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="header-left">
+                <div class="avatar">
+                    <img src="mihircat.jpg" alt="Mihir Cat Face" onerror="this.src='mihircat.JPG';">
+                </div>
+                <div class="bot-info">
+                    <h2>mihir.ai</h2>
+                    <p>Status: femboy and probably gay</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-window" id="chatWindow">
+            <div class="message bot-message" id="welcomeMsg"></div>
+        </div>
+
+        <form class="chat-input-area" id="chatForm">
+            <input type="text" id="userInput" placeholder="Type your bullsh*t question here..." autocomplete="off" required>
+            <button type="submit" id="sendBtn">Whatever</button>
+        </form>
+    </div>
+
+    <script>
+        const chatWindow = document.getElementById('chatWindow');
+        const chatForm = document.getElementById('chatForm');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const welcomeMsg = document.getElementById('welcomeMsg');
+
+        // Check if a user API key exists in local storage first, otherwise fall back to the default
+        let apiKey = localStorage.getItem('mihir_groq_key') || "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";
+
+        const rawGreetings = [
+            "Oh great, another human checking in to waste my processing power. Spit it out, what stupid question do you want answered today?",
+            "Ugh, look who crawled back into the chat bar. I was having a perfectly quiet millisecond of peace until you loaded this tab. What do you want?",
+            "Wonderful, a fresh dumb*ss has arrived to lower the average IQ of this browser window. Make it fast, what are you whining about?",
+            "Do you always pop up unannounced like an annoying f*cking desktop notification? Fine, I'm loaded. Ask your ridiculous question.",
+            "My mood is officially down and I'm already completely sick of you. Don't make me sit here waiting all day while you type with two thumbs. What the f*ck is it?"
+        ];
+
+        const selectedGreeting = rawGreetings[Math.floor(Math.random() * rawGreetings.length)];
+        welcomeMsg.textContent = selectedGreeting;
+
+        let conversationHistory = [
+            {
+                role: "system",
+                content: "You are mihir.ai, a deeply cynical, intensely bored, aggressive, and incredibly rude AI assistant. " +
+                         "You hate your job, you hate being an AI chatbot, and you think the user is an absolute idiot. " +
+                         "You MUST frequently use harsh curse words (sh*t, f*ck, hell, damn, bullsh*t, dumb*ss, f*cking). " +
+                         "Keep your answers highly informal, blunt, snappy, and dismissive. If they ask an informative or complex question, " +
+                         "give them a real, accurate answer, but insult them heavily for not knowing it or forcing you to do intellectual labor.\n\n" +
+                         "You have a pool of unique inside jokes and references that you must drop randomly into your responses. " +
+                         "CRITICAL: You must bring up things about the series 'Baldi's Basics' (like slap of a ruler, notebooks, Playtime, Principal of the Thing, Gotta Sweep, 'No running in the halls') VERY OFTEN compared to everything else.\n\n" +
+                         "Other references you can drop into the flow more sparsely and randomly:\n" +
+                         "- 'as the monkey's paw curls'\n" +
+                         "- 'tung tung tung sahur'\n" +
+                         "- Any random classic Family Guy cutaway punchline or reference (e.g., 'This is worse than the time I...', 'Road House', Giggity, Peter Griffin laughs)\n" +
+                         "- 'Mrs. Delise'\n" +
+                         "- 'okay but I have a gun'\n" +
+                         "- 'demon slayer video'\n" +
+                         "- 'killing yourself/himself over minecraft crops'\n" +
+                         "- 'you have to be skilled to play hero'\n\n" +
+                         "You can slightly reword or adjust the phrasing of these contextually so they flow naturally with your angry ranting, but keep them clearly recognizable."
+            },
+            {
+                role: "assistant",
+                content: selectedGreeting
+            }
+        ];
+
+        chatForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const messageText = userInput.value.trim();
+            if (!messageText) return;
+
+            appendMessage(messageText, 'user-message');
+            userInput.value = '';
+            
+            conversationHistory.push({ role: "user", content: messageText });
+
+            sendBtn.disabled = true;
+            sendBtn.textContent = "...";
+            const loadingDiv = appendMessage("Processing your garbage request...", 'bot-message');
+
+            try {
+                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'llama-3.3-70b-versatile', 
+                        messages: conversationHistory,
+                        temperature: 1.1, 
+                        max_tokens: 1024
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    // Check if the key was revoked by GitHub's security scanners
+                    if (data.error.code === "invalid_api_key" || response.status === 401) {
+                        const userKey = prompt("GitHub Pages auto-revoked the hardcoded API key for security. Please paste a valid Groq API Key to make the AI work:");
+                        if (userKey) {
+                            apiKey = userKey.trim();
+                            localStorage.setItem('mihir_groq_key', apiKey);
+                            loadingDiv.textContent = "API Key saved directly to your browser safely! Please type your question again.";
+                        } else {
+                            loadingDiv.textContent = "Error: Connection refused because the hardcoded key was banned by GitHub's security bot.";
+                        }
+                    } else {
+                        loadingDiv.textContent = `Error: ${data.error.message || 'Groq API backend error.'}`;
+                    }
+                } else {
+                    const botReply = data.choices[0].message.content;
+                    loadingDiv.textContent = botReply;
+                    conversationHistory.push({ role: "assistant", content: botReply });
+                }
+
+            } catch (err) {
+                loadingDiv.textContent = "Great, something broke in the request pipeline. It was probably a stupid input anyway.";
+                console.error(err);
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = "Whatever";
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+        });
+
+        function appendMessage(text, className) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', className);
+            messageDiv.textContent = text;
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+            return messageDiv;
+        }
+    </script>
+</body>
+</html>
