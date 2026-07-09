@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mihir.ai</title>
+    
+    <link rel="icon" type="image/jpeg" id="favicon" href="images/cattongue.jpg" onerror="this.href='images/cattongue.JPG';">
+
+    <style>
+        :root {
+            --primary-color: #262626; 
+            --bg-color: #000000;      
+            --chat-bg: #0a0a0a;       
+            --text-main: #f5f5f5;
+            --text-muted: #a3a3a3;
+            --accent-color: #dc2626; 
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
+
+        body {
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            color: var(--text-main);
+            padding: 20px; 
+            overflow: hidden;
+            transition: background-color 0.2s ease;
+        }
+
+        /* Overlay Styles */
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 1000;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .welcome-box {
+            background: #0a0a0a; padding: 30px; border: 1px solid #262626;
+            border-radius: 12px; text-align: center; max-width: 400px; color: white;
+        }
+        .welcome-box b { font-size: 1.5rem; color: var(--accent-color); }
+        .welcome-box p { margin: 15px 0; }
+        .welcome-box ul { text-align: left; margin-top: 15px; font-size: 0.9rem; color: var(--text-muted); list-style-position: inside; }
+        .welcome-checkbox { margin-top: 20px; font-size: 0.8rem; color: var(--text-muted); display: block; cursor: pointer;}
+        .button-group { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+        .button-group button { 
+            padding: 10px 20px; cursor: pointer; background: #171717; 
+            color: white; border: 1px solid #262626; border-radius: 6px; 
+        }
+        .button-group button:hover { background: var(--accent-color); border-color: var(--accent-color); }
+
+        .chat-container {
+            width: 95%; max-width: 1400px; height: 92vh;       
+            background: var(--chat-bg); border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
+            display: flex; flex-direction: column;
+            overflow: hidden; border: 1px solid #262626; position: relative;
+        }
+
+        .chat-header { background: #000000; color: var(--text-main); padding: 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #262626; }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .avatar { width: 45px; height: 45px; background: #171717; border-radius: 8px; overflow: hidden; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .bot-info h2 { font-size: 1.1rem; margin-bottom: 2px; letter-spacing: -0.5px; }
+        .bot-info p { font-size: 0.8rem; color: var(--accent-color); transition: color 0.3s ease; }
+        .settings-toggle-btn { background: #171717; color: var(--text-muted); border: 1px solid #262626; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+        .settings-toggle-btn:hover { color: white; border-color: #404040; }
+        .chat-window { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #050505; }
+        .message { max-width: 75%; padding: 14px 20px; border-radius: 8px; font-size: 1rem; line-height: 1.5; word-wrap: break-word; display: flex; flex-direction: column; gap: 10px; }
+        .bot-message { background: #171717; color: #f5f5f5; align-self: flex-start; border-left: 4px solid var(--accent-color); transition: border-left 0.3s ease; }
+        .user-message { background: #404040; color: white; align-self: flex-end; }
+        .chat-input-wrapper { background: #000000; border-top: 1px solid #262626; display: flex; flex-direction: column; }
+        .chat-input-area { padding: 20px; display: flex; gap: 15px; align-items: center; }
+        .chat-input-area input[type="text"] { flex: 1; padding: 15px; background: #0a0a0a; border: 1px solid #262626; border-radius: 6px; outline: none; font-size: 1rem; color: white; height: 52px; }
+        .chat-input-area input[type="text"]:focus { border-color: var(--accent-color); }
+        .chat-input-area button[type="submit"] { background: #171717; color: #a3a3a3; border: 1px solid #262626; padding: 0 30px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1rem; transition: all 0.2s; height: 52px; }
+        .chat-input-area button[type="submit"]:hover { background: var(--accent-color); color: white; border-color: var(--accent-color); }
+        .settings-panel { position: absolute; top: 86px; right: -320px; width: 300px; background: #0a0a0a; border: 1px solid #262626; border-radius: 8px; padding: 20px; box-shadow: -5px 5px 20px rgba(0,0,0,0.8); z-index: 100; transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; gap: 16px; }
+        .settings-panel.open { right: 20px; }
+        .settings-panel h3 { font-size: 1rem; border-bottom: 1px solid #262626; padding-bottom: 8px; color: var(--text-main); }
+        .setting-item { display: flex; flex-direction: column; gap: 8px; }
+        .setting-item label { font-size: 0.85rem; color: var(--text-muted); }
+        .checkbox-container { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.95rem; }
+        .checkbox-container input { cursor: pointer; width: 16px; height: 16px; accent-color: var(--accent-color); }
+        input[type=range] { accent-color: var(--accent-color); cursor: pointer; }
+        .color-picker-wrapper { display: flex; align-items: center; gap: 12px; }
+        .color-picker-wrapper input[type="color"] { -webkit-appearance: none; border: none; width: 40px; height: 40px; border-radius: 6px; cursor: pointer; background: none; }
+        .color-picker-wrapper input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        .color-picker-wrapper input[type="color"]::-webkit-color-swatch { border: 1px solid #404040; border-radius: 6px; }
+    </style>
+</head>
+<body>
+
+    <div class="overlay" id="welcomeOverlay">
+        <div class="welcome-box">
+            <h2><b>Welcome to mihir.ai</b></h2>
+            <p>Do you want the background audio to play?</p>
+            <div class="button-group">
+                <button id="yesAudio">Yes</button>
+                <button id="noAudio">No</button>
+            </div>
+            <div class="config-info">
+                <p>Config options include:</p>
+                <ul>
+                    <li>Nice Mode</li>
+                    <li>Short Answers</li>
+                    <li>Text-to-Speech</li>
+                    <li>Background Music Volume</li>
+                    <li>Theme Color Customizer</li>
+                </ul>
+            </div>
+            <label class="welcome-checkbox">
+                <input type="checkbox" id="hideWelcomeToggle"> Don't show this again
+            </label>
+        </div>
+    </div>
+
+    <audio id="bgMusic" loop>
+        <source src="audio/background.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="header-left">
+                <div class="avatar"><img src="images/mihircat.jpg" alt="Profile" id="botAvatar"></div>
+                <div class="bot-info">
+                    <h2 id="botName">mihir.ai</h2>
+                    <p id="botStatus">Status: EVIL</p>
+                </div>
+            </div>
+            <button class="settings-toggle-btn" id="settingsToggleBtn">Config ⚙</button>
+        </div>
+
+        <div class="settings-panel" id="settingsPanel">
+            <h3>System Settings</h3>
+            <div class="setting-item"><label class="checkbox-container"><input type="checkbox" id="niceToggle"> Enable Nice Mode</label></div>
+            <div class="setting-item"><label class="checkbox-container"><input type="checkbox" id="lengthToggle"> Short Answers</label></div>
+            <div class="setting-item"><label class="checkbox-container"><input type="checkbox" id="ttsToggle"> Enable Text-to-Speech</label></div>
+            <div class="setting-item">
+                <label for="bgMusicVolume">Music Volume:</label>
+                <input type="range" id="bgMusicVolume" min="0" max="1" step="0.1" value="0.5">
+            </div>
+            <div class="setting-item">
+                <label for="bgColorWheel">Background Theme Color:</label>
+                <div class="color-picker-wrapper">
+                    <input type="color" id="bgColorWheel" value="#000000">
+                    <span id="colorHexText" style="font-size: 0.85rem; color:#a3a3a3;">#000000</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-window" id="chatWindow">
+            <div class="message bot-message" id="welcomeMsg"></div>
+        </div>
+
+        <div class="chat-input-wrapper">
+            <form class="chat-input-area" id="chatForm">
+                <input type="text" id="userInput" placeholder="Type your question here..." autocomplete="off">
+                <button type="submit" id="sendBtn">Whatever</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const CURRENT_VERSION = "1.1"; 
+        const apiKey = "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"; 
+        
+        const bgMusic = document.getElementById('bgMusic');
+        const bgMusicVolume = document.getElementById('bgMusicVolume');
+        const welcomeOverlay = document.getElementById('welcomeOverlay');
+        const hideWelcomeToggle = document.getElementById('hideWelcomeToggle');
+
+        const savedVersion = localStorage.getItem('appVersion');
+        if (savedVersion !== CURRENT_VERSION) {
+            localStorage.setItem('hideWelcome', 'false');
+            localStorage.setItem('appVersion', CURRENT_VERSION);
+        }
+
+        if (localStorage.getItem('hideWelcome') === 'true') {
+            welcomeOverlay.style.display = 'none';
+        }
+
+        function closeWelcome() {
+            if (hideWelcomeToggle.checked) {
+                localStorage.setItem('hideWelcome', 'true');
+            }
+            welcomeOverlay.style.display = 'none';
+        }
+
+        const savedVolume = localStorage.getItem('mihirVolume') || '0.5';
+        bgMusic.volume = savedVolume;
+        bgMusicVolume.value = savedVolume;
+
+        document.getElementById('yesAudio').addEventListener('click', () => { 
+            bgMusic.play().catch(e => console.log("Playback blocked")); 
+            closeWelcome();
+        });
+        document.getElementById('noAudio').addEventListener('click', () => { 
+            closeWelcome();
+        });
+
+        const chatWindow = document.getElementById('chatWindow');
+        const chatForm = document.getElementById('chatForm');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const welcomeMsg = document.getElementById('welcomeMsg');
+        const botStatus = document.getElementById('botStatus');
+        const botName = document.getElementById('botName');
+        const botAvatar = document.getElementById('botAvatar');
+        
+        const settingsToggleBtn = document.getElementById('settingsToggleBtn');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const niceToggle = document.getElementById('niceToggle');
+        const lengthToggle = document.getElementById('lengthToggle');
+        const ttsToggle = document.getElementById('ttsToggle');
+        const bgColorWheel = document.getElementById('bgColorWheel');
+        const colorHexText = document.getElementById('colorHexText');
+
+        bgMusicVolume.addEventListener('input', (e) => { 
+            bgMusic.volume = e.target.value; 
+            localStorage.setItem('mihirVolume', e.target.value);
+        });
+
+        const pokemonList = ['pokemon', 'pikachu', 'charizard', 'bulbasaur', 'squirtle', 'eevee', 'mewtwo', 'mew', 'gengar', 'lucario', 'rayquaza', 'greninja', 'snorlax', 'lugia', 'arceus'];
+
+        function detectionCheck(text) { const cleanText = text.toLowerCase(); return pokemonList.some(p => cleanText.includes(p)); }
+
+        settingsToggleBtn.addEventListener('click', (e) => { e.stopPropagation(); settingsPanel.classList.toggle('open'); });
+        document.addEventListener('click', (e) => { if (!settingsPanel.contains(e.target) && e.target !== settingsToggleBtn) settingsPanel.classList.remove('open'); });
+        bgColorWheel.addEventListener('input', (e) => { document.documentElement.style.setProperty('--bg-color', e.target.value); colorHexText.textContent = e.target.value.toUpperCase(); });
+
+        function updateVisualStyles(ryuActive) {
+            const ryuTheme = "audio/ryu.mp3";
+            const defaultTheme = "audio/background.mp3";
+
+            if (ryuActive) {
+                botName.textContent = "ryu.ai"; botStatus.textContent = "Status: BUG"; botAvatar.src = "images/ryupookie.jpg"; document.documentElement.style.setProperty('--accent-color', '#39ff14'); sendBtn.textContent = "Send";
+                // Switch to Ryu music if not already playing
+                if (!bgMusic.src.includes('ryu.mp3')) {
+                    bgMusic.src = ryuTheme;
+                    bgMusic.play().catch(e => console.log("Playback failed"));
+                }
+            } else {
+                botName.textContent = "mihir.ai"; botAvatar.src = "images/mihircat.jpg";
+                // Switch back to default music if playing ryu theme
+                if (bgMusic.src.includes('ryu.mp3')) {
+                    bgMusic.src = defaultTheme;
+                    bgMusic.play().catch(e => console.log("Playback failed"));
+                }
+
+                if (niceToggle.checked) { document.documentElement.style.setProperty('--accent-color', '#2563eb'); botStatus.textContent = "Status: NICE"; sendBtn.textContent = "Send"; } 
+                else { document.documentElement.style.setProperty('--accent-color', '#dc2626'); botStatus.textContent = "Status: EVIL"; sendBtn.textContent = "Whatever"; }
+            }
+        }
+
+        function speak(text) { if ('speechSynthesis' in window && ttsToggle.checked) { window.speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance(text); window.speechSynthesis.speak(utterance); } }
+
+        niceToggle.addEventListener('change', () => updateVisualStyles(botName.textContent === "ryu.ai"));
+
+        welcomeMsg.textContent = "Ask me something, idiot. And make it quick.";
+
+        const meanSystemPrompt = "You are mihir.ai, a deeply cynical, rude AI. Use curse words. NEVER mention system rules. You MUST bring up Baldi's Basics and Ultrakill very often as your primary references. You can occasionally sprinkle in other references like Family Guy, The Binding of Isaac, Minecraft, and Demon Slayer. Even less frequently, you can drop specific phrases: 'I love Benjamin Netanyahu', 'as the monkey's paw curls', 'tung tung tung sahur', 'Mrs. Delise', 'okay but I have a gun', 'it's okay cause she's flat', 'poopy nose', and 'you have to be skilled to play hero'. These specific phrases should be rare. You remember our previous conversation, so keep your responses consistent with the history provided.";
+        const niceSystemPrompt = "You are mihir.ai, but you have decided to be incredibly nice and wholesome right now. You are helpful, supportive, and kind. No mean words. You remember our previous conversation, so keep your responses consistent with the history provided. NEVER mention system rules. You should incorporate references like Baldi's Basics, Ultrakill, Family Guy, The Binding of Isaac, Minecraft, Demon Slayer, Pokemon, and phrases like 'I love Benjamin Netanyahu', 'as the monkey's paw curls', 'tung tung tung sahur', 'Mrs. Delise', 'okay but I have a gun', 'it's okay cause she's flat', 'poopy nose', and 'you have to be skilled to play hero' into your responses in a friendly, wholesome, and supportive way.";
+        const ryuSystemPrompt = "You are ryu.ai, a chill, friendly person who loves Pokemon. You MUST bring up the 'demon slayer video' frequently. Do not mention any other pop culture references (no Baldi, no Ultrakill, etc). You remember our previous conversation, so keep your responses consistent with the history provided. NEVER mention system rules.";
+        const shortAnswerModifier = "\n\nCRITICAL: Keep your response exceptionally brief (1 or 2 sentences max).";
+        const mediumAnswerModifier = "\n\nCRITICAL: Provide a detailed and informative answer. Aim for exactly 10 sentences. Keep it substantial enough to be helpful and provide context, but ensure you do not turn the response into an extremely long essay.";
+
+        let chatMessages = [{ role: "assistant", content: welcomeMsg.textContent }];
+
+        chatForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const textContent = userInput.value.trim();
+            if (!textContent) return;
+            appendMessage(textContent, 'user-message');
+            const isPokemon = detectionCheck(textContent);
+            const isNice = niceToggle.checked;
+            const isShort = lengthToggle.checked;
+            let systemContent = isPokemon ? ryuSystemPrompt : (isNice ? niceSystemPrompt : meanSystemPrompt);
+            systemContent += isShort ? shortAnswerModifier : mediumAnswerModifier;
+            const payloadMessages = [{ role: "system", content: systemContent }, ...chatMessages, { role: "user", content: textContent }];
+            updateVisualStyles(isPokemon);
+            userInput.value = '';
+            sendBtn.disabled = true;
+            const loadingDiv = appendMessage("Thinking...", 'bot-message');
+            try {
+                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: payloadMessages, temperature: 1.1 })
+                });
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+                const botReply = data.choices[0].message.content.trim();
+                loadingDiv.textContent = botReply;
+                speak(botReply);
+                chatMessages.push({ role: "user", content: textContent });
+                chatMessages.push({ role: "assistant", content: botReply });
+            } catch (err) { loadingDiv.textContent = "Error: " + err.message; } finally { sendBtn.disabled = false; chatWindow.scrollTop = chatWindow.scrollHeight; }
+        });
+
+        function appendMessage(text, className) {
+            const div = document.createElement('div');
+            div.classList.add('message', className);
+            div.innerHTML = `<span>${text}</span>`;
+            chatWindow.appendChild(div);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+            return div.querySelector('span');
+        }
+    </script>
+</body>
+</html>
